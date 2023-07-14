@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.goodee.mvcboard.mapper.BoardMapper">
+	
+	<select id="selectBoardOne"
+			parameterType = "com.goodee.mvcboard.vo.Board"
+			resultType="com.goodee.mvcboard.vo.Board">
+			SELECT
+				board_no boardNo,
+				local_name localName,
+				board_title boardTitle,
+				board_content boardContent,
+				member_id memberId,
+				createdate,
+				updatedate
+			FROM board
+			WHERE board_no = #{boardNo}
+	</select>
+	
+	<delete id="removeBoard"
+			parameterType="com.goodee.mvcboard.vo.Board">
+			DELETE FROM board
+			WHERE board_no = #{boardNo}
+	   <!-- AND member_id = #{memberId} -->
+	</delete>
+	
+	<update id="modifyBoard"
+			parameterType="com.goodee.mvcboard.vo.Board">
+			UPDATE board
+			SET board_title = #{boardTitle},
+				board_content = #{boardContent}
+			WHERE board_no = #{boardNo}
+			AND member_id = #{memberId}
+	</update>
+	
+	<insert id="addBoard"
+			parameterType="com.goodee.mvcboard.vo.Board">
+			<selectKey order="AFTER" keyProperty="boardNo" resultType="int"><!-- 키가 반환된 후에 -->
+				SELECT last_insert_id()
+			</selectKey><!-- insert가 일어난 후 board_no 생성 -> 매개변수에 전달. 값 복사 -->
+			INSERT INTO board(
+				local_name,
+				board_title,
+				board_content,
+				member_id,
+				createdate,
+				updatedate
+			) VALUES (
+				#{localName}, <!-- ? -> Board.getLocalName() -->
+				#{boardTitle},
+				#{boardContent},
+				#{memberId},
+				NOW(),
+				NOW()
+			)
+	</insert>
+	
+	<select id="selectLocalNameList"
+			resultType="java.util.Map">
+			SELECT local_name localName, count(*) cnt
+			FROM board
+			GROUP BY local_name
+	</select>
+	
+	<select id="selectBoardListByPage"
+			parameterType="java.util.Map"
+			resultType="com.goodee.mvcboard.vo.Board">
+			SELECT
+				board_no boardNo,
+				local_name localName,
+				board_title boardTitle,
+				member_id memberId,
+				createdate
+			FROM board
+			<where> <!-- 존재할 수도 있고 안할 수도 있는 where 코드 --><!-- if문이 참일때만 내용 생성 -->
+				<if test="localName != null &amp;&amp; localName != '' "><!-- jstl과 mybatis는 동일한 코드를 사용 -->
+					local_name = #{localName}
+				</if>
+			</where>
+			ORDER BY createdate DESC
+			LIMIT #{beginRow}, #{rowPerPage}
+	</select>
+	
+	<select id="selectBoardCount"
+			resultType="int">
+			SELECT
+				COUNT(*)
+			FROM board
+			<where>
+				<if test="localName != null &amp;&amp; localName != '' "><!-- jstl과 mybatis는 동일한 코드를 사용 -->
+					local_name = #{localName}
+				</if>
+			</where>
+	</select>
+
+</mapper>
